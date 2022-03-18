@@ -24,7 +24,7 @@ const (
 	n1 float64 = 0.08
 	n2 float64 = 0.02
 	n3 float64 = 0.06
-	// 失业险为固定值
+	// 失业险为固定值，根据实际情况填入
 	n4 float64 = 7.08
 
 	// 三险一金，公司缴纳的比例
@@ -33,25 +33,35 @@ const (
 	m3 float64 = 0.06
 )
 
+var (
+	a      float64 = 18000 // 养老保险缴纳的基数
+	b      float64 = 18000 // 医疗保险缴纳的基数
+	c      float64 = 18000 // 公积金缴纳的基数
+	salary float64 = 20000 // 每个月的实际工资
+)
+
 func main() {
 	// 计算需要缴纳的个税和公司缴纳的公积金
-	f1, f2 := test1(12764)
+	f1, f2 := test1(a, b, c, salary)
 	fmt.Printf("需要缴纳的个税：%v￥，公司缴纳的公积金：%v￥\n", f1, f2)
 
 	// 计算最佳人民币工资和发u工资的分配，默认计算范围(5000-你的每月工资额)
-	// 因为选择发u则相应的社保和公积金基数也会随着变化
-	// 所以，计算只考虑公积金部分，如果把公司缴纳的社保部分也考虑进去的话，则人民币部分肯定是越大越好了
-	// 社保公积金缴纳系数可以按照实际情况修改上面定义的变量
-	test2(30000)
+	test2(salary)
 }
 
+// 因为选择发u则相应的社保和公积金基数也会随着变化 所以，计算只考虑公积金部分，
+// 如果把公司缴纳的社保部分也考虑进去的话，则人民币部分肯定是越大越好了
+// 公积金缴纳比例可以按照实际情况修改上面定义的变量
 func test2(salary float64) {
 	// 初始化
-	n1, n2 := test1(5000)
+	n1, n2 := test1(5000, 5000, 5000, 5000)
 	// 最佳的人民币工资额
 	var index, max float64
 	for i := float64(5001); i < salary; i++ {
-		f1, f2 := test1(i)
+		// 三险一金缴纳基数默认取工资数，如果有不同的情况，可以在此加入三险一金的基数计算逻辑
+		// 比如三险一金的缴纳基数是工资的一半，则: a, b, c := i/2, i/2, i/2
+		a, b, c := i, i, i
+		f1, f2 := test1(a, b, c, i)
 
 		// 这个是少交的税
 		m1 := f1 - n1
@@ -75,16 +85,16 @@ func test2(salary float64) {
 	fmt.Printf("最佳发人民币工资额：%v￥, 最佳发u工资额:%v￥\n", index, salary-index)
 }
 
-func test1(basicWage1 float64) (float64, float64) {
+func test1(a, b, c, salary float64) (float64, float64) {
 	// 三险一金
-	num1 := basicWage1 * n1
-	num2 := basicWage1 * n2
-	num3 := basicWage1 * n3
+	num1 := a * n1
+	num2 := b * n2
+	num3 := c * n3
 	num := (num1 + num2 + num3 + n4) * 12
 	// 应纳税所得额
-	res1 := (basicWage1 * 12) - num - deduct - SpecialAdditionalDeduction
+	res1 := (salary * 12) - num - deduct - SpecialAdditionalDeduction
 	// 公司缴纳的公积金，这里只考虑公积金部分，如果要考虑社保部分，则肯定是基数越高越好
-	res2 := (basicWage1 * m3) * 12
+	res2 := (c * m3) * 12
 	return test(res1), res2
 }
 
